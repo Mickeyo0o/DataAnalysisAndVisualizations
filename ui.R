@@ -10,11 +10,11 @@
 library(shiny)
 library(shinydashboard)
 library(DT)
-
+library(plotly)
 dashboardPage(
   dashboardHeader(),
   dashboardSidebar(selectizeInput('appName', 'App ID', choices = NULL,options = list(maxOptions=100000, placeholder = 'Select app name...')),
                    dateRangeInput('dateRange', 'Date', format = 'yyyy-mm-dd'),
                    actionButton('allDates', 'Show all data')),
-  dashboardBody(DTOutput('comments'), plotOutput('scoreHist'))
+  dashboardBody(DTOutput('comments'), plotOutput('scoreHist'), plotlyOutput("reviewsPie"), plotlyOutput("reviewsTime"), plotlyOutput("thumbs"))
 )
