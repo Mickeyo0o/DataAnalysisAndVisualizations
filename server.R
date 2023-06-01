@@ -138,6 +138,15 @@ function(input, output, session) {
     reactiveVals$dataAmount = input$dataAmount
   })
   
+  observeEvent(input$Help, {
+    shinyalert(title = "Help", text = "This dashboard represents the reviews of applications on Google Play Store.
+               The buttons placed on the sidebar allow users to change all of the graphs at once, while buttons near graphs change only the specific graph.
+               All of the plots are interactable (hover information is displayed and plots can be zoomed).
+               To see a specific review presented on the graph representing the most liked reviews, click the dot on the plot to see its details.
+               To hide the sidebar you can click on the button with 3 horizontal lines at the top of the page.
+               To leave this menu click OK below.", type = "info")
+  })
+  
   
   
   
@@ -227,13 +236,14 @@ function(input, output, session) {
                                       ifelse(score == "3", "#fff400",
                                             ifelse(score == "4", "#a3ff00", "#2cba00"))))) %>%
         filter(score %in% reactiveVals$selectedScores)
+      
+      reactiveVals$selectedPoint <- data
         
-      plot <- ggplot(data, aes(x = Date, y = Likes, text = paste("Score:", score))) +
+      plot <- ggplot(data, aes(x = Date, y = Likes, text = paste("Score:", score), customdata = Date)) +
         geom_point(alpha = 0.7, size = 3, color = data$color) +
-        theme_minimal() +
-        scale_x_date(date_labels = "%Y-%m-%d")
+        theme_minimal() 
         
-      plot <- ggplotly(plot)
+      plot <- ggplotly(plot, source = "selection")
       
       plot %>% layout(plot_bgcolor='#2d2d30', 
                       paper_bgcolor = '#2d2d30',
@@ -247,6 +257,38 @@ function(input, output, session) {
                         zerolinecolor = '#646467',  
                         zerolinewidth = 2,  
                         gridcolor = '#515154'))
+    }
+  })
+  
+  
+  output$selectedReview <- renderUI({
+    event <- event_data("plotly_click", source = "selection")
+    if (!is.null(event)) {
+      selectedData <- reactiveVals$selectedPoint %>%
+        filter(.$Likes == event$y) %>%
+        filter(.$Date == event$customdata)
+      if (nrow(selectedData) == 0) {
+        box(
+          class = "custom-box",
+          width = 12,
+          title = "Select a point on the graph to the left.",
+        )
+      } else{
+      box(
+        class = "custom-box",
+        width = 12,
+        title = selectedData$name[1],
+        box(class = sprintf("rating-box-%i", selectedData$score[1]), width = 1, height = 10, selectedData$score[1]),
+        selectedData$Date[1], br(), br(),
+        selectedData$content[1], 
+      )
+      }
+    } else {
+      box(
+        class = "custom-box",
+        width = 12,
+        title = "Select a point on the graph to the left.",
+      )
     }
   })
   
@@ -292,31 +334,50 @@ function(input, output, session) {
   
   output$timeReply <- renderPlotly({
     if (reactiveVals$filteredData %>% count() > 0) {
-      data <- data.frame(score = reactiveVals$filteredData$score, 
+      data <- data.frame(Score = reactiveVals$filteredData$score, 
                          time = reactiveVals$filteredData$at, 
                          reply = reactiveVals$filteredData$repliedAt) %>%
         filter(str_length(reply) > 0) %>%
-        mutate(between = as.Date(reply) - as.Date(time)) %>%
-        filter(between >= 0) %>%
-        group_by(score, between) %>%
+        mutate(Time = as.Date(reply) - as.Date(time)) %>%
+        filter(Time >= 0) %>%
+        group_by(Score, Time) %>%
         summarize(amount = n()) %>%
         filter(amount >= reactiveVals$dataAmount) %>%
         ungroup() %>%
-        mutate(color = ifelse(score == "1", "#ff0000", 
-                              ifelse(score == "2", "#ffa700",
-                                     ifelse(score == "3", "#fff400",
-                                            ifelse(score == "4", "#a3ff00", "#2cba00"))))) %>%
-        mutate(score = as.factor(score))
+        mutate(color = ifelse(Score == "1", "#ff0000", 
+                              ifelse(Score == "2", "#ffa700",
+                                     ifelse(Score == "3", "#fff400",
+                                            ifelse(Score == "4", "#a3ff00", "#2cba00"))))) %>%
+        mutate(Score = as.factor(Score))
+      
       if (data %>% count() > 5) {
-        plot <- ggplot(data, aes(x = score, y = between, fill = score)) +
+        plot <- ggplot(data, aes(x = Score, y = Time, fill = Score, color = Score)) +
           geom_violin() +
           scale_fill_manual(values = c("1" = "#ff0000", "2" = "#ffa700", "3" = "#fff400", 
+                                       "4" = "#a3ff00", "5" = "#2cba00"),
+                            breaks = c("1", "2", "3", "4", "5")) +
+          scale_color_manual(values = c("1" = "#ff0000", "2" = "#ffa700", "3" = "#fff400", 
                                        "4" = "#a3ff00", "5" = "#2cba00"),
                             breaks = c("1", "2", "3", "4", "5")) +
           labs(x = "Score", y = "Time difference (days)") +
           theme_minimal()
             
-        ggplotly(plot) %>% layout(showlegend = FALSE)
+        plot <- ggplotly(plot, tooltip = c('x', 'y'))
+        
+        plot %>% layout(plot_bgcolor='#2d2d30', 
+                        paper_bgcolor = '#2d2d30',
+                        xaxis = list(
+                          title = list(text = 'Score', font = list(color = "#ffffff")),
+                          zerolinecolor = '#646467',  
+                          zerolinewidth = 2,  
+                          gridcolor = '#515154'),  
+                        yaxis = list(
+                          title = list(text = 'Time in days', 
+                                       font = list(color = "#ffffff")),
+                          zerolinecolor = '#646467',  
+                          zerolinewidth = 2,  
+                          gridcolor = '#515154'),
+                        showlegend=FALSE)
       }
     }
   })
