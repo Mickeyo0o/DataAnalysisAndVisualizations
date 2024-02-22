@@ -9,7 +9,7 @@ Explore insights from Google Playstore app reviews with the dynamic dashboard:
 
 * <b>Location:</b> GooglePlaystoreReviewsDashboard folder
 
-* <b>Data:</b> reviews.csv dataset from [here](hrefhttps://www.kaggle.com/datasets/prakharrathi25/google-play-store-reviews)
+* <b>Data:</b> reviews.csv dataset from [here](https://www.kaggle.com/datasets/prakharrathi25/google-play-store-reviews)
 
 * <b>Files:</b>
     * ui.R: Describes the dashboard's appearance
