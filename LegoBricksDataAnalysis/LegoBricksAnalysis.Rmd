@@ -1,0 +1,358 @@
+---
+title: |
+  <center>
+  ![](data/logo.jpg){width=7in}
+  </center>
+  Data Visualization Assignment 3
+author: "Mikołaj Marmurowicz, Kajetan Sulwiński"
+date: "2023-04-04"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+header-includes: null
+---
+
+
+
+\newpage
+<div id='summary'/>
+# Executive Summary 
+In this report we will analyze the overall progress of the LEGO company. Specifically, we will delve into marketing strategy differences over the years, the technology advancement of production line and the creativity connected with creating and expanding the themes of LEGO sets. We are going to perform a very in-depth analysis that will provide enough information to foresee the future which LEGO company will have ahead of itself.\
+Our first few experiments prove that LEGO has drastically changed in terms of marketing. Data shows that LEGO is starting to slowly pull more adult audience towards itself and most likely this trend is going to continue in the future, as such strategy is far more profitable for the company. As this strategy works very well, the LEGO bricks have been in demand. That infers that the technological advancement of production of bricks is also very much sufficient, as far more blocks are produced in a large variety of colors making it enough to cover any shortcomings. This advancement has been so high in the last few years that we expect it to slowly die out, eventually becoming constant. Additionally, the representation of hierarchy of themes of LEGO sets allowed us to notice some interesting dependencies. Above all, we noticed that modern themes mostly do not have subthemes yet, that is because LEGO prefers to be safe and firstly create multiple discrete themes and then delve deeper into only a few that have met public expectations. This rule is likely not going to change, as it has always worked like that. \
+We recommend performing more specified research about the exact themes that has been expanded upon, as this information may prove to be useful to create successful future sets. On the other hand, we also recommend analyzing themes that have not succeed, to avoid similar mistakes.
+
+
+
+\newpage
+<div id='contents'/>
+# Table of contents
+1. [**Executive summary**](#summary)
+2. [**Table of contents**](#contents)
+3. [**Introduction**](#intro)
+4. [**Methodology**](#methodology)
+5. [**Results & findings**](#results)\
+  5.1. [Graph 1](#graph1)\
+  5.2. [Graph 2](#graph2)\
+  5.3. [Graph 3](#graph3)\
+  5.4. [Graph 4](#graph4)\
+  5.5. [Graph 5](#graph5)\
+  5.6. [Graph 6](#graph6)\
+  5.7. [Bonus Graph](#bonus)\
+6. [**Discussion**](#discussion)
+7. [**Conclusion and recommendations**](#conclusions)
+
+
+
+\newpage
+<div id='intro'/>
+# Introduction
+This report is produced as an assignment for the Data Visualization course. We will analyze the overall progress of the LEGO company. Specifically, we will delve into marketing strategy differences over the years, the technology advancement of production line and the creativity connected with creating and expanding the themes of LEGO sets. It is well known that, LEGO has grown since the beginning, but we will perform an in-depth analysis of topics mentioned above, measuring exactly what the growth is. Additionally, we will try to draw conclusions regarding decisions of head executives of the company based on our observations. What is more, we are going to try predicting the future growth and the direction in which this company may go. Furthermore, we are going to present possible further areas of research.
+
+
+
+\newpage
+<div id='methodology'/>
+# Methodology
+To perform following experiments we have used a rebrickable data set available [**here**](https://rebrickable.com/downloads/). The specific schema diagram for LEGO data files is represented below (picture from the rebrickable website).
+
+<center>
+![](https://rebrickable.com/static/img/diagrams/downloads_schema_v3.png){width=8in}
+</center>
+
+Additionally, to perform all necessary calculations and graph creations we have used R and the following libraries:
+
+  + ggplot2 - used to create multiple graphs
+  + dplyr - used to perform data transformations 
+  + knitr - used to create the report files
+  + ggraph - used to create [Graph 6](#graph6)
+  + igraph - used to create [Graph 6](#graph6)
+  + plotly - used to add interactivity to multiple graphs 
+  + circlepackeR - used to create the [Bonus Graph](#bonus) Additional Information click [**here**](#circlepackeR)
+  + data.tree - used to perform data transformations for the [Bonus Graph](#bonus)
+  + tidyr - used to perform data transformations 
+
+Data files have to be placed in a separate directory called **Data**, that should be created in the same directory as the source file. 
+
+Keep in mind that this report was created mainly to be represented as an html version, therefore pdf output may not work.
+
+<div id='circlepackeR'/>
+* The package ___circlepackeR___ cannot be downloaded easily therefore additional package is used - ___devtools___ and additional command can be found in the setup block: _devtools::install_github("jeromefroe/circlepackeR")_ as the package can be downloaded from github. More information regarding the package can be found [**here**](https://github.com/jeromefroe/circlepackeR) and [**here**](https://r-graph-gallery.com/338-interactive-circle-packing-with-circlepacker)
+
+
+
+\newpage
+<div id='results'/>
+# Results & findings
+
+```{r setup, include=FALSE}
+library('ggplot2')
+library('dplyr')
+library('knitr')
+library('ggraph')
+library('igraph')
+library('plotly')
+library('devtools')
+devtools::install_github("jeromefroe/circlepackeR")
+library('circlepackeR')
+library('data.tree')
+library('tidyr')
+
+opts_chunk$set(echo = F)
+```
+
+```{r data_loading}
+data_colors = read.csv("data/colors.csv")
+data_elements = read.csv("data/elements.csv")
+data_inventories = read.csv("data/inventories.csv")
+data_inv_minifigs = read.csv("data/inventory_minifigs.csv")
+data_inv_parts = read.csv("data/inventory_parts.csv")
+data_inv_sets = read.csv("data/inventory_sets.csv")
+data_minifigs = read.csv("data/minifigs.csv")
+data_part_cat = read.csv("data/part_categories.csv")
+data_part_rel = read.csv("data/part_relationships.csv")
+data_parts = read.csv("data/parts.csv")
+data_sets = read.csv("data/sets.csv")
+data_themes = read.csv("data/themes.csv")
+```
+
+<div id='graph1'/>
+## Graph 1
+
+```{r first_plot, warning=F}
+p1 <- ggplot(data_sets, aes(x = num_parts)) + 
+  geom_histogram(binwidth = 100) + 
+  xlim(0, 1500) + ylim(0, 5000) + 
+  theme_bw() + 
+  labs(title = "Distribution of sets based on the number of parts", 
+       x = "Number of parts", y = "Count")
+
+ggplotly(p1)
+```
+
+This graph represents the quantities of sets according to the amount of parts included in them. Each bar on this plot represents the interval from $100 * n$ to $100 * (n + 1)$. The plot has been limited to only show sets with the number of parts below 1500, as  the sets above this number are sparse and do not provide any useful information.\
+This visualization shows that most sets that are produced do not exceed 200 blocks. What is more, we can notice that we can more or less divide the sizes of the sets into 3 different groups, with accordance to the production frequency. First one - most popular up to 200 blocks, second - less popular up to 1000 bricks and the least popular group - above 1000. The relations between these groups will be tested in the further experiments. 
+
+\newpage
+<div id='graph2'/>
+## Graph 2
+
+```{r data_prep_second_graph}
+df2 <- data.frame(year = data_sets$year, parts = data_sets$num_parts) %>%
+  mutate(., parts = case_when(parts <= 200 ~ 'x < 200', 
+                                parts > 200 & parts <= 1000 ~ '1000>x>200',
+                                parts > 1000 ~ 'x > 1000')) %>%
+  group_by(year, parts) %>%
+  tally()
+```
+
+```{r second_plot, warning=F}
+p2 <- ggplot(df2, aes(x = year, y = n, color = parts)) + 
+  geom_bar(position = "stack", stat = "identity") +
+  theme_bw() + 
+  labs(title = "The number of sets per year and the distribution of their brick amounts", 
+       x = "Year", y = "Count", color="Set size")
+
+ggplotly(p2)
+```
+
+This graph represents the amount of different sets produced each year and their classification into three previously mentioned groups. Each bar on this plot represents a single year of LEGO existence. The bar is divided by different colors which can be interpreted according to the legend.\
+This visualization shows that the number of sets was increasing every year, reaching the peak value in 2021. Additionally, it once again shows that the sets with more than 1000 blocks are the rarest, while the sets with less than 200 bricks are the most common. This graph, however, does not allow us to easily examine the exact proportions of these three groups in given years. This knowledge is absolutely fundamental to understand the main target market of the LEGO company, the next experiment will shed some light on this topic.
+
+\newpage
+<div id='graph3'/>
+## Graph 3
+
+```{r data_prep_third_graph, warning=F}
+df3 = df2 %>% group_by(year) %>% 
+  summarise(sum = sum(n)) %>% 
+  left_join(., df2, by = "year") %>%
+  mutate(., n = n/sum)
+```
+
+```{r third_plot, warning=F}
+p3 <- ggplot(df3, aes(x = year, y = n, color = parts)) + 
+  geom_bar(stat = 'identity') + 
+  labs(title = 'Proportion of set sizes per year',
+       x = "Year", y = "Proportion", color = "Set size") +
+  theme_bw()
+
+ggplotly(p3)
+```
+
+This graph represents the proportion of the three groups of set sizes throughout the years. Each bar on this plot represents a single year of LEGO existence and is divided by different colors which can be interpreted according to the legend. There are two years, where no information of available sets is provided.\
+This plot shows that the number of small sets ($<200$) was the most popular every year, but some interesting conclusions can be derived. First of all, LEGO decided to produce medium sets ($200<x<1000$) back in 1960s and from that point onward the proportion of these sets was mostly growing. What is more, LEGO started production of sets bigger than 1000 elements in about 1990s and the proportion of these sets is also growing ever since. That means that LEGO is taking the opportunity to grow the possible consumers age range by producing sets targeted towards older audiences, while still maintaining the production of sets specifically created for children and teenagers. 
+
+\newpage
+<div id='graph4'/>
+## Graph 4
+
+```{r data_prep_fourth_graph, warning = F, message=F}
+df4 <- left_join(data_inv_parts, data_colors, by = c('color_id' = 'id')) %>%
+  left_join(., data_inventories, by = c("inventory_id" = "id")) %>%
+  left_join(., data_sets, by = "set_num")
+
+df4 <- data.frame(color = df4$rgb, year = df4$year) %>%
+  mutate(color = as.character(paste0("#", as.character(.$color)))) %>%
+  group_by(year, color) %>%
+  summarize(count = n()) %>%
+  ungroup()
+```
+
+```{r fourth_plot, warning=F}
+p4 <- ggplot(df4, aes(x = year, y = count, fill = color)) +
+  geom_col(show.legend = F) +
+  scale_fill_manual(values = df4$color) +
+  theme_dark() +
+  labs(title = "Number of types of bricks and the distribution of their colors",
+       x = "Year", y = "Count")
+
+p4 <- ggplotly(p4)
+
+p4 <- layout(p4, showlegend = FALSE)
+
+p4
+```
+
+This graph represents the amount of various bricks used in sets produced in given years and the distribution of their colors. Each bar on this plot represents a single year of LEGO existence and is divided by different colors which represent the exact color of the bricks produced. Transparency of blocks and other special features were omitted.\
+After analyzing the marketing strategy of LEGO, it is also important to analyze technological growth of the production line of the bricks themselves. This plot shows that the variety of blocks has been growing almost at all times, and the different colors used now cover nearly all hues that can be distinguished by human eye, which was not the case in the beginning. It proves that the company developed sufficient technology to produce large variety of blocks and their colors in a large scale making it possible to reach larger audiences. 
+
+\newpage
+<div id='graph5'/>
+## Graph 5
+
+```{r data_prep_fifth_graph}
+df5 <- left_join(data_sets, data_themes, by = c('theme_id' = 'id')) %>%
+  mutate(., parent_id = case_when(is.na(parent_id) ~ 'no', 
+                                  !is.na(parent_id) ~ 'yes'))
+```
+
+```{r fifth_plot, warning=F}
+p5_1 <- ggplot(df5, aes(x = year, color = parent_id)) + 
+  geom_histogram(binwidth = 1) +
+  theme_bw() + 
+  labs(title = "The number of themes used per year",
+       x = "Year", y = "Count", color="Has a parent?")
+
+p5_2 <- ggplot(df5, aes(x = year, color = parent_id)) + 
+  geom_histogram(binwidth = 1, show.legend = F) +
+  xlim(1947, 1963) + ylim(0, 100) + 
+  theme_bw() +
+  labs(x = "Year", y = "Count")
+  
+p5 <- p5_1 + annotation_custom(ggplotGrob(p5_2), xmin = 1948, xmax = 1985,
+                               ymin = 400, ymax = 1000) +
+  geom_rect(aes(xmin = 1948, xmax = 1985, ymin = 400, ymax = 1000), 
+            color = 'black', alpha = 0, linewidth = 0.1) +
+  geom_rect(aes(xmin = 1947.5, xmax = 1962.5, ymin = 0, ymax = 100), 
+            color = 'black', alpha = 0, linewidth = 0.1) +
+  geom_path(aes(x, y, group = grp), color = 'black', linetype = 'dashed',
+            data = data.frame(x = c(1947.5, 1948, 1962.5, 1985),
+                              y = c(100, 400, 100, 400),
+                              grp = c(1, 1, 2, 2)))
+
+p5
+```
+
+This graph represents the amount of themes used per year and whether the themes have a parent or not. Each bar on this plot represents a single year of LEGO existence and is divided into two subcategories, that can be interpreted according to the legend. There is also a zoom on the early days of LEGO to be able to see more clearly how the themes were distributed back then.\
+Seeing the advancement of technology as well as the marketing, we can take a look at how the amount of themes varied along these years. This graph shows that the diversity of themes has been growing throughout the whole lifetime of LEGO. Additionally, we can notice that there are more and more standalone themes produced, while still maintaining the expansion of previously released themes. Interestingly, the themes produced at the very beginning had parent themes, what may infer a couple of possibilities. Either the data was not correctly classified, the data does not contain all the information or most possibly, themes, in which sets were produced in the early days, were later classified to be a subclass of a newer theme. We are going to explore the theme hierarchy in the next experiment to draw more accurate and in-depth conclusions. 
+
+\newpage
+<div id='graph6'/>
+## Graph 6
+
+```{r data_prep_sixth_graph}
+df6_1 <- data.frame(year = data_sets$year, theme_id = data_sets$theme_id) %>%
+  group_by(theme_id) %>%
+  summarise(start = min(year)) %>%
+  full_join(data_themes, by = c('theme_id' = 'id')) %>%
+  group_by(parent_id) %>%
+  summarise(size = n())
+
+  
+df6 <- data.frame(year = data_sets$year, theme_id = data_sets$theme_id) %>%
+  group_by(theme_id) %>%
+  summarise(start = min(year)) %>%
+  full_join(data_themes, by = c('theme_id' = 'id')) %>%
+  left_join(df6_1, by = c('theme_id' = 'parent_id')) %>%
+  mutate(., size = case_when(is.na(size) ~ 1, size >= 0 ~ size + 1)) %>%
+  mutate(., parent_id = case_when(is.na(parent_id) ~ 0, parent_id >= 0 ~ parent_id))
+
+df6[nrow(df6) + 1,] <- list(0, 1940, "LEGO", NA, 142)
+
+edges <- data.frame(from = df6$parent_id, to = df6$theme_id) 
+
+edges <- edges[-nrow(edges),]
+
+vertices <- data.frame(name = df6$theme_id, size = df6$size, real_name = df6$start)
+```
+
+```{r sixth_plot, warning=F, message=F}
+mygraph <- graph_from_data_frame(edges, vertices=vertices)
+
+p6 <- ggraph(mygraph, layout = 'circlepack', weight = size) + 
+  geom_node_circle(aes(fill = depth, color = real_name)) +
+  theme_void() +
+  scale_color_distiller(palette = "YlOrRd") + 
+  labs(fill = 'Depth', color = 'Year',
+       title = 'Hierarchy of themes and the year of first appearance')
+
+p6
+```
+
+This graph visualizes the expansions of themes and the years of the releases of the first sets of given themes. Each circle represents a theme and may contain other circles inside, which represent the subthemes. What is more, color of the rim of each circle represents the year that a first set of given theme was created. The year value can be read from the legend on the side. Sadly names are not included as the graph would be unreadable.\
+As mentioned in the previous test, there were some unclear information presented on the graph. This representation shows us that the most probable theory is indeed correct. We can notice that some older themes are categorized as subthemes of newer ones. Additionally, we notice that majority of themes were not expanded upon, that suggests that consumers of LEGO products get bored quickly and prefer to get a large variety of themes than to delve deeper into a single theme. There are a few exceptions that have multiple levels of hierarchy, suggesting that some specific topics are liked by the public and require LEGO to proceed creating even more specific subsets of these themes. On top of that we can notice that usually older themes are expanded, while most of the newer sets are either subthemes of older themes, or completely new themes that have yet to be expanded. Interestingly, there is a single group that has been already expanded at the early days of LEGO and did not receive any more expansions. To see specific details of any interesting cases, we have prepared an [additional representation](#bonus) that is interactive, meaning the graph even with names is far more readable. 
+
+\newpage
+<div id='bonus'/>
+## Bonus Graph
+
+```{r bonus_graph}
+edges_interactive <- data.frame(edges) %>% 
+  left_join(., df6, by = c('from' = 'theme_id')) %>% 
+  select(., 'from', 'to', 'name', 'start') %>%
+  unite(col = "parent_name", name, start, sep = " ") %>%
+  left_join(., df6, by = c('to' = 'theme_id')) %>%
+  select(., 'from', 'to', 'parent_name', 'name', 'start') %>%
+  unite(col = "child_name", name, start, sep = " ") %>%
+  select('parent_name', 'child_name') %>%
+  rename(from = parent_name, to=child_name)
+
+data_tree <- FromDataFrameNetwork(edges_interactive)
+
+data_nested <- ToDataFrameTree(data_tree,
+                               level0 = function(x) 'roots',
+                               level1 = function(x) ifelse(length(x$path) >= 2, x$path[2], NA),
+                               level2 = function(x) ifelse(length(x$path) >= 3, x$path[3], NA),
+                               level3 = function(x) ifelse(length(x$path) >= 4, x$path[4], NA),
+                               level4 = function(x) ifelse(length(x$path) >= 5, x$path[5], NA),
+                               level5 = function(x) ifelse(length(x$path) >= 6, x$path[6], NA))[-1, -1]
+
+data_nested$pathString <- apply(data_nested, 1, function(x) paste(x[!is.na(x)], collapse = "/"))
+
+data_nested$value = 1
+
+data_Node <- as.Node(data_nested)
+
+pBonus <- circlepackeR(data_Node, size = "value", width=800, height=800)
+
+pBonus 
+```
+
+This graph represents the same information that is represented in [Graph 6](#graph6) with addition of specific names of themes so that research can be conducted according to specified themes. To see deeper levels of hierarchy, just click on the specific subcategory. To leave the zoom click outside of the circle. Some information regarding the themes that have not been expanded yet is still hard to read but if clicked correctly, one may see the title of these themes. 
+
+
+
+\newpage
+<div id='discussion'/>
+# Discussion
+Our experiment accuracy and significance is solely dependent on the data set provided - our data set possibly had some missing information, but still most significant data was present. We are assured of the great accuracy by the facts that can be derived from the graphs which are closely related with the current and previously noticed trends.
+Our first few experiments try to evaluate, what one of those trends may be, and they do prove that LEGO has drastically changed in terms of marketing. Data that has been gathered and represented by graphs shows that LEGO has changed their strategy and is starting to slowly pull more adult audience towards itself and most likely this trend is going to continue in the future, as such strategy is far more profitable for the company. Additionally, we can also notice that far more sets are being sold now, thus the marketing strategy clearly is working. This fact depicts the technological advancement of production of bricks, as the demand is growing, while LEGO is still able not only to produce enough of bricks, but also come up with new shapes and colors almost every year. However, we believe that this growth has nearly stopped and will become almost constant in the near future. That is due to the fact of how quickly the number of different bricks grew in the past few years, it is ought to stop, as the human creativity has its limits. What is more, in the year 2022 we may already notice the a slight drop of number of blocks. Furthermore, creativity can be also tested by depicting the hierarchy of themes. That representation allowed us to notice some interesting dependencies. For example LEGO does not forget about the older themes, they tend to either mark the old ones as subthemes for newer themes, though that is rare, or they extend the old ones by new ideas, which is far more popular. We may also notice that modern themes mostly do not have subthemes yet, that is because LEGO prefers to be safe and firstly create multiple discrete themes and then delve deeper into only a few that have met public expectations. That has been their strategy from the very beginning and it seems to work perfectly, thus we expect that not much is going to change in this matter. There are just a few exceptions to this rule, but these exceptions form a very small part of the whole theme space.
+
+
+
+\newpage
+<div id='conclusions'/>
+# Conclusion & recommendations
+The LEGO company seems to have picked all the right decisions throughout history and continues to do so. The current marketing strategies are very well planned, and the progression of bricks production is closely related to this this plan, thus no problems of unavailability or overproduction will be encountered. The company is ought to grow more, but the expansion is going to take slower and slower until stopping fully.
+We suggest performing more specified research about given themes that can be described as "liked" by the public, judging by the number of subcategories of given themes, and why some old sets have failed to expand. This information may be crucial to develop future themes that would be made to succeed.
