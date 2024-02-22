@@ -51,7 +51,7 @@ Dive into the world of LEGO bricks with performed comprehensive analysis:
 * <b>Features:</b>
     * Detailed analysis of LEGO brick data
     * Visualizations, and explanations provided
-* <b>Recommendation:</b> Export R Markdown to HTML for optimal viewing
+* <b>Recommendation:</b> Export R Markdown to HTML for optimal viewing or download the already generated HTML file.
 
 
 ## Creators 
